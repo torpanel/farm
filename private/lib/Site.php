@@ -7,13 +7,23 @@ class Site {
   public function render() {
     try {
       ob_start();
-      include $this->getPageScript($this->getPage());
+      $this->widget('site');
       ob_end_flush();
     } catch (Exception $e) {
       ob_end_clean();
       trigger_error($e);
       echo "There has been an error";
     }
+  }
+
+  public function widget($name, $_args=[]) {
+    $here = __DIR__;
+    $_script = "$here/../widgets/$name.php";
+    if (!file_exists($_script)) { throw new Exception("Unknown widget $name"); }
+    unset($here, $name);
+    extract($_args);
+    unset($_args);
+    include $_script;
   }
 
   public function getPage() {
@@ -97,4 +107,24 @@ class Site {
 
     return $this->pdo;
   }
+}
+
+function html($x) {
+  if (!is_scalar($x)) { throw new Exception("HTML output must be scalar"); }
+  echo htmlspecialchars($x);
+}
+
+function htmlattr($key, $value) {
+  if (!is_scalar($key)) { throw new Exception("HTML attribute key must be a scalar"); }
+  if (!is_scalar($value)) { throw new Exception("HTML attribute value must be a scalar"); }
+  $value = trim($value);
+  if (strlen($value) <= 0) { return; }
+  $value = htmlspecialchars($value);
+  echo " $key=\"$value\" ";
+}
+
+function href($page, $args=[]) {
+  if ($page === 'home') { $page = '/'; }
+  if (preg_match('#^[a-z0-9_\\-]$#', $page)) { $page = "/$page"; }
+  htmlattr('href', $page);
 }
