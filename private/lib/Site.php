@@ -1,7 +1,6 @@
 <?php
 
 class Site {
-  private $pdo;
   private $page;
 
   public function render() {
@@ -67,26 +66,22 @@ class Site {
     return (int)$this->getPostInt($key);
   }
 
+  public function getDb() {
+    if (!isset($this->db)) { $this->db = new Db($this->connect()); }
+    return $this->db;
+  }
+
+  private function connect() {
+    $cfg = $this->loadConfig('db');
+    if (!isset($cfg->name)) { $cfg->name = "torpanel"; }
+    if (!isset($cfg->host)) { $cfg->host = "127.0.0.1"; }
+    if (!isset($cfg->dsn)) { $cfg->dsn = "mysql:dbname={$cfg->name};host={$cfg->host}"; }
+    return new pdo($cfg->dsn, $cfg->user, $cfg->pass);
+  }
+
   public function query() {
-    $this->connect();
     $args = func_get_args();
-    $sql = [];
-    $params = [];
-
-    foreach ($args as $value) {
-      if (is_array($value)) {
-        $params = array_merge($params, $value);
-      } else if (is_string($value)) {
-        $sql[] = $value;
-      } else {
-        throw new Exception("Arguments must be a string or array");
-      }
-    }
-
-    $sql = implode(' ', $sql);
-    $statement = $this->pdo->prepare($sql);
-    if (!$statement->execute($params)) { throw new Exception("Unable to execute statement"); }
-    return $statement;
+    return $this->getDb()->query($args);
   }
 
   public function loadConfig($name) {
@@ -94,18 +89,6 @@ class Site {
     $file = "$here/../config/db.php";
     if (!file_exists($file)) { throw new Exception("Missing config '$name'"); }
     return (object)(include $file);
-  }
-
-  public function connect() {
-    if (!isset($this->pdo)) {
-      $cfg = $this->loadConfig('db');
-      if (!isset($cfg->name)) { $cfg->name = "torpanel"; }
-      if (!isset($cfg->host)) { $cfg->host = "127.0.0.1"; }
-      if (!isset($cfg->dsn)) { $cfg->dsn = "mysql:dbname={$cfg->name};host={$cfg->host}"; }
-      $this->pdo = new pdo($cfg->dsn, $cfg->user, $cfg->pass);
-    }
-
-    return $this->pdo;
   }
 }
 

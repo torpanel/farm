@@ -14,4 +14,5 @@ rm /etc/apache2/sites-enabled/000-default.conf
 cp vhost.conf /etc/apache2/sites-enabled/vhost.conf
 
 a2dismod status
+a2enmod rewrite
 service apache2 restart
